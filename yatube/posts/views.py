@@ -45,20 +45,11 @@ def profile(request, username):
     paginator = Paginator(posts, 10)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
-    if request.user.is_authenticated:
-        subscription = Follow.objects.filter(author=author, user=request.user)
-        if subscription.exists():
-            following = True
-            return render(
-                request,
-                template,
-                {
-                    "author": author,
-                    "page_obj": page_obj,
-                    "following": following,
-                },
-            )
-    context = {"author": author, "page_obj": page_obj}
+    following = (
+        request.user.is_authenticated
+        and Follow.objects.filter(author=author, user=request.user).exists()
+    )
+    context = {"author": author, "page_obj": page_obj, "following": following}
     return render(request, template, context)
 
 
@@ -119,7 +110,7 @@ def post_edit(request, post_id):
 
 @login_required
 @require_GET
-def follow_index(request):  # TODO добавить методы запроса
+def follow_index(request):
     template = "posts/follow.html"
     posts = Post.objects.filter(author__following__user=request.user)
     paginator = Paginator(posts, 10)
@@ -135,9 +126,8 @@ def follow_index(request):  # TODO добавить методы запроса
 @require_GET
 def profile_follow(request, username):
     author = get_object_or_404(User, username=username)
-    subscription = Follow.objects.filter(author=author, user=request.user)
-    if author != request.user and not subscription.exists():
-        Follow.objects.create(author=author, user=request.user)
+    if author != request.user:
+        Follow.objects.get_or_create(author=author, user=request.user)
     return redirect("posts:profile", username)
 
 
