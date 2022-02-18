@@ -12,7 +12,7 @@ from .models import Follow, Group, Post, User
 @require_GET
 def index(request):
     template = "posts/index.html"
-    posts = Post.objects.all()
+    posts = Post.objects.select_related("author", "group")
     paginator = Paginator(posts, 10)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
@@ -26,7 +26,7 @@ def index(request):
 def group_posts(request, slug):
     template = "posts/group_list.html"
     group = get_object_or_404(Group, slug=slug)
-    posts = group.posts.all()
+    posts = group.posts.select_related("author")
     paginator = Paginator(posts, 10)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
@@ -41,13 +41,15 @@ def group_posts(request, slug):
 def profile(request, username):
     template = "posts/profile.html"
     author = get_object_or_404(User, username=username)
-    posts = author.posts.all()
+    posts = author.posts.select_related("author", "group")
     paginator = Paginator(posts, 10)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
     following = (
         request.user.is_authenticated
-        and Follow.objects.filter(author=author, user=request.user).exists()
+        and Follow.objects.filter(
+            author__following__user=request.user
+        ).exists()
     )
     context = {"author": author, "page_obj": page_obj, "following": following}
     return render(request, template, context)
@@ -58,7 +60,7 @@ def post_detail(request, post_id):
     form = CommentForm()
     template = "posts/post_detail.html"
     post = get_object_or_404(Post, id=post_id)
-    comments = post.comments.all()
+    comments = post.comments.select_related("author")
     context = {"post": post, "form": form, "comments": comments}
     return render(request, template, context)
 

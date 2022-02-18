@@ -357,6 +357,7 @@ class FollowViewsTest(TestCase):
         self.another_auth_user.force_login(self.another_user)
 
     def test_authorized_user_follow(self):
+        """Авторизованный пользователь может подписаться на автора поста."""
         self.another_auth_user.get(  # Act
             reverse(
                 "posts:profile_follow",
@@ -369,6 +370,7 @@ class FollowViewsTest(TestCase):
         self.assertEqual(follow_obj.user_id, self.another_user.id)
 
     def test_authorized_user_unfollow(self):
+        """Авторизованный пользователь может отписаться на автора поста."""
         Follow.objects.create(author=self.user, user=self.another_user)
         follows_count = Follow.objects.count()
 
@@ -382,6 +384,7 @@ class FollowViewsTest(TestCase):
         self.assertEqual(Follow.objects.count(), follows_count - 1)
 
     def test_follow_post_on_follow_page(self):
+        """После подписки пост попадает на страницу подписок."""
         Follow.objects.create(author=self.user, user=self.another_user)
 
         follow_list = (  # Act
@@ -393,6 +396,7 @@ class FollowViewsTest(TestCase):
         self.assertIn(self.post, follow_list)
 
     def test_follow_post_not_in_wrong_page(self):
+        """После подписки пост не попал на ненужную страницу."""
         Follow.objects.create(author=self.user, user=self.another_user)
 
         follow_list = (  # Act
